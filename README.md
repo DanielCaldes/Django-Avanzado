@@ -91,15 +91,17 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Cuerpo de la solicitud** (JSON):
   ```json  
   {
-    "username": "nombre",
-    "email": "correo@example.com"
-  }
+     "username": "Cristina_Romero_Palacios",
+     "email": "cRomeroPalacios@alumno.gmail.com",
+     "is_professor":false,
+     "password":"cristinaRomero"
+   }
   ```
 - **Respuesta**:
   ```json  
   {
     "message": "User created successfully",
-    "id": 123
+    "id": 22
   }
   ```
 
@@ -113,18 +115,18 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Respuesta**:
   ```json  
   [
-    {
-      "id": 1,
-      "username": "nombre",
-      "email": "correo@example.com",
-      "professor": true
-    },
-    {
-      "id": 2,
-      "username": "otro_nombre",
-      "email": "otro_correo@example.com",
-      "professor": false
-    }
+     {
+       "id": 2,
+       "username": "Juan_Ruiz_Lopez",
+       "email": "jRuizLopez@profesor.mail.com",
+       "professor": true
+     },
+     {
+       "id": 3,
+       "username": "Pedro_Sanchez_Castejon",
+       "email": "pSanchezCastejon@alumno.mail.com",
+       "professor": false
+     }
   ]
   ```
 
@@ -138,11 +140,11 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Respuesta**:
   ```json  
   {
-    "id": 1,
-    "username": "nombre",
-    "email": "correo@example.com",
-    "professor": true
-  }
+     "id": 2,
+     "username": "Juan_Ruiz_Lopez",
+     "email": "jRuizLopez@profesor.mail.com",
+     "professor": true
+   }
   ```
 
 #### 4. Eliminar un usuario por ID
@@ -167,7 +169,7 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Cuerpo de la solicitud** (JSON):
   ```json  
   {
-    "new_password": "nueva_contraseña"
+    "new_password": "4321231"
   }
   ```
 - **Respuesta**:
