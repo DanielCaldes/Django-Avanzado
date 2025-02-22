@@ -73,7 +73,50 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
    python manage.py runserver
    ```
 
-2. Accede a la documentación interactiva de la API en Swagger o Redoc:
+2. Crea un token de acceso para un usuario:<br>
+   **Creación de usuarios**
+      
+      Puedes iniciar sesión con los usuarios que crees para la aplicación (por ejemplo: `admin`, `alumno`, `profesor`). Para facilitar las pruebas, se recomienda usar el superusuario `admin`.
+      
+      Puedes crear el superusuario manualmente con el siguiente comando:
+      ```bash
+      python manage.py createsuperuser
+      ```
+      O, si prefieres que se cree automáticamente al iniciar el proyecto, puedes configurar las variables de entorno (`.env`) para crear el superusuario de manera automática. Esto se puede hacer configurando variables como `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_PASSWORD` y `DJANGO_SUPERUSER_EMAIL`.
+   Para obtener un token de acceso (si ya tienes un usuario creado), realiza una solicitud `POST` a la siguiente URL:
+   
+   ```bash
+   POST /api/token/
+   ```
+   
+   **Cuerpo de la solicitud (Request Body)**:
+   ```json
+   {
+     "username": "tu_usuario",
+     "password": "tu_contraseña"
+   }
+   ```
+   **Respuesta (Response)**:
+   
+   Si las credenciales son correctas, la respuesta contendrá un token de acceso que podrás usar para autenticar tus futuras peticiones:
+   ```json
+   {
+     "access": "tu_token_de_acceso"
+   }
+   ```
+   
+   **Uso del token en las peticiones**
+   
+   Una vez que tengas el token de acceso, deberás incluirlo en las cabeceras de tus peticiones como un **Bearer token**. Esto se hace agregando el siguiente encabezado (header) a tus solicitudes:
+   ```makefile
+   Authorization: Bearer tu_token_de_acceso
+   ```
+   Ejemplo de una solicitud con el token de acceso:
+   ```bash
+   curl -H "Authorization: Bearer tu_token_de_acceso" http://127.0.0.1:8000/api/courses/
+   ```
+   
+3. Accede a la documentación interactiva de la API en Swagger o Redoc:
    - Swagger: http://127.0.0.1:8000/swagger/
    - Redoc: http://127.0.0.1:8000/redoc/
 
@@ -91,15 +134,17 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Cuerpo de la solicitud** (JSON):
   ```json  
   {
-    "username": "nombre",
-    "email": "correo@example.com"
-  }
+     "username": "Cristina_Romero_Palacios",
+     "email": "cRomeroPalacios@alumno.gmail.com",
+     "is_professor":false,
+     "password":"cristinaRomero"
+   }
   ```
 - **Respuesta**:
   ```json  
   {
     "message": "User created successfully",
-    "id": 123
+    "id": 22
   }
   ```
 
@@ -113,18 +158,18 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Respuesta**:
   ```json  
   [
-    {
-      "id": 1,
-      "username": "nombre",
-      "email": "correo@example.com",
-      "professor": true
-    },
-    {
-      "id": 2,
-      "username": "otro_nombre",
-      "email": "otro_correo@example.com",
-      "professor": false
-    }
+     {
+       "id": 2,
+       "username": "Juan_Ruiz_Lopez",
+       "email": "jRuizLopez@profesor.mail.com",
+       "professor": true
+     },
+     {
+       "id": 3,
+       "username": "Pedro_Sanchez_Castejon",
+       "email": "pSanchezCastejon@alumno.mail.com",
+       "professor": false
+     }
   ]
   ```
 
@@ -138,11 +183,11 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Respuesta**:
   ```json  
   {
-    "id": 1,
-    "username": "nombre",
-    "email": "correo@example.com",
-    "professor": true
-  }
+     "id": 2,
+     "username": "Juan_Ruiz_Lopez",
+     "email": "jRuizLopez@profesor.mail.com",
+     "professor": true
+   }
   ```
 
 #### 4. Eliminar un usuario por ID
@@ -167,7 +212,7 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Cuerpo de la solicitud** (JSON):
   ```json  
   {
-    "new_password": "nueva_contraseña"
+    "new_password": "4321231"
   }
   ```
 - **Respuesta**:
@@ -184,19 +229,19 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 
 - **Método**: GET  
   ```url  
-  /api/courses/categories/
+  /api/categories/
   ```
 - **Descripción**: Obtiene una lista de todas las categorías disponibles.
 - **Respuesta**:
   ```json  
   [
     {
-      "id": 1,
-      "name": "Tecnología"
+      "id": 8,
+      "name": "artificial_intelligence"
     },
     {
-      "id": 2,
-      "name": "Ciencias Sociales"
+      "id": 14,
+      "name": "big_data"
     }
   ]
   ```
@@ -205,14 +250,14 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 
 - **Método**: GET  
   ```url  
-  /api/courses/categories/{category_id}/
+  /api/categories/{category_id}/
   ```
 - **Descripción**: Obtiene los detalles de una categoría específica por su ID.
 - **Respuesta**:
   ```json  
   {
-    "id": 1,
-    "name": "Tecnología"
+    "id": 8,
+    "name": "artificial_intelligence"
   }
   ```
 
@@ -228,12 +273,26 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Descripción**: Permite realizar operaciones CRUD sobre los cursos.
 - **Respuesta**:
   ```json  
-  {
-    "id": 1,
-    "name": "Curso de Tecnología",
-    "description": "Curso introductorio de tecnología",
-    "categories": ["Tecnología", "Ciencias"]
-  }
+  [
+     {
+       "id": 1,
+       "categories_details": [
+         {
+           "id": 5,
+           "name": "business"
+         },
+         {
+           "id": 14,
+           "name": "big_data"
+         }
+       ],
+       "name": "Grado en Big Data y negocios",
+       "description": "Título propio en negocios y Big Data",
+       "start_date": "2025-09-01",
+       "end_date": "2029-06-30",
+       "professor_id": 3
+     }
+  ]
   ```
 
 #### 2. Ver la lista de estudiantes en un curso
@@ -246,11 +305,18 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Respuesta**:
   ```json  
   [
-    {
-      "id": 1,
-      "username": "student_name",
-      "email": "student_email@example.com"
-    }
+     {
+       "id": 1,
+       "user": 10,
+       "user_username": "Iker Casillas",
+       "created_at": "2025-02-22T14:56:52.337772Z"
+     },
+     {
+       "id": 2,
+       "user": 11,
+       "user_username": "Sergio Ramos",
+       "created_at": "2025-02-22T15:11:03.116704Z"
+     }
   ]
   ```
 
@@ -264,13 +330,13 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Cuerpo de la solicitud** (JSON):
   ```json  
   {
-    "user_id": 1
+    "user": "16"
   }
   ```
 - **Respuesta**:
   ```json  
   {
-    "message": "Student added successfully to the course."
+    "detail": "Successfully created. Student ID: 10"
   }
   ```
 
@@ -283,9 +349,7 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Descripción**: Elimina a un estudiante de un curso específico.
 - **Respuesta**:
   ```json  
-  {
-    "message": "Student removed from the course."
-  }
+  {}
   ```
   
 
@@ -301,12 +365,15 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Respuesta**:
   ```json  
   {
-    "suggested_courses": [
-      {
-        "name": "Curso de Ciencia de Datos",
-        "description": "Aprende sobre análisis de datos",
-        "categories": ["Tecnología", "Ciencias"]
-      }
-    ]
+     "suggested_courses": [
+       {
+         "name": "Master en Ciberseguridad y Negocios",
+         "description": "Master oficial",
+         "categories": [
+           "business",
+           "cybersecurity"
+         ]
+       }
+     ]
   }
   ```
