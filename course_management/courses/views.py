@@ -4,164 +4,190 @@ from rest_framework import viewsets
 from .models import *
 from .serializers import *
 
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from .permissions import IsProfessor, IsProfessorOrReadOnly, ReadOnlyForStudents, IsAdmin
+from rest_framework import generics
+
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, IsAdminUser, AllowAny
+from .permissions import IsAdminUserOrProfessorOrReadOnly,IsProfessor, IsProfessorOrReadOnly, ReadOnlyForStudents, IsStudent
+
 from rest_framework.views import APIView
+
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 from rest_framework import status
+
 from django.contrib.auth.models import User, Group
 
-# Category 
+###############
+#   CATEGORY  #
+###############
+
 # Ver todas las categorias
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
 # Consultar una categoria por id
 class CategoryRetrieveView(generics.RetrieveAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
-class UsersCreateGetView(APIView):
-    def get(self, request):
-        try:
-            users = User.objects.all()
-            data=[]
-            for user in users:
-                data.append(
-                    {
-                        "id":user.id,
-                        "username" : user.username,
-                        "email" : user.email,
-                        "professor" : user.groups.filter(name="Students").exists()
-                    }
-                )
-            return Response(data, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"message":"User not found"}, status=status.HTTP_404_NOT_FOUND)
+###############
+#    USERS    #
+###############
+
+# Crear y obtener el listado de usuarios
+class UsersListCreateView(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     
-    def post(self, request):
-        username = request.data.get("username")
-        email = request.data.get("email")
-        password = request.data.get("password")
-        is_professor = request.data.get("is_professor")
-
-        required_fields = ["username", "email", "password"]
-        missing_fields = [field for field in required_fields if not request.data.get(field)]
-        if missing_fields:
-            return Response(
-                {"message": "All fields are required", "missing_fields": missing_fields}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        print("He creado un alumno")
-        user = User.objects.create_user(username=username, email=email, password=password)
-
-        group_name = "Professors" if is_professor == True else "Students"
-        print(group_name)
-        group, created = Group.objects.get_or_create(name=group_name)
-        user.groups.add(group)
-        return Response({"message": "User created successfully", "id": user.id}, status=status.HTTP_201_CREATED)
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAdminUser()]  # Solo administradores pueden crear usuarios
+        return [AllowAny()]
     
-class UsersGetDeleteView(APIView):
-    def get(self, request, user_id):
-        try:
-            user = User.objects.get(id = user_id)
-            data = {
-                "id":user.id,
-                "username" : user.username,
-                "email" : user.email
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Filtrar por grupo (professors/students)
+        is_professor = self.request.query_params.get("is_professor")
+        if is_professor is not None:
+            group_name = "Professors" if is_professor.lower() == "true" else "Students"
+            queryset = queryset.filter(groups__name=group_name)
+
+        return queryset
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        data = [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "professor": user.groups.filter(name="Professors").exists(),
             }
-            return Response(data, status=status.HTTP_200_OK)
-        except User.DoesNotExist:
-            return Response({"message":"User not found"}, status=status.HTTP_404_NOT_FOUND)
+            for user in queryset
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
 
-    def delete(self, request, user_id):
-        try:
-            user = User.objects.get(id=user_id)
-            user.delete()
-            return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        except User.DoesNotExist:
-            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"message": "User created successfully", "id": user.id},
+            status=status.HTTP_201_CREATED,
+        )
+    
+# Obtener y borrar un usuario por id    
+class UsersRetrieveDeleteView(generics.RetrieveDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
-class ResetPasswordView(APIView):
-    permission_classes = [IsAdmin]
-    def post(self, request, user_id):
-        new_password = request.data.get('new_password')
+    def get_permissions(self):
+        if self.request.method == "DELETE":
+            return [IsAdminUser()]  # Solo admins pueden eliminar usuarios
+        return [AllowAny()]
 
-        if not new_password:
-            return Response({"message": "Missing 'new_password' parameter."}, status=status.HTTP_400_BAD_REQUEST)
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = {
+            "id": instance.id,
+            "username": instance.username,
+            "email": instance.email,
+            "professor": instance.groups.filter(name="Professors").exists(),
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
-        try:
-            user = User.objects.get(id=user_id)
+# Resetear una contraseña
+class PasswordUpdateView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    permission_classes = [IsAdminUser]
+    serializer_class = PasswordUpdateSerializer
 
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        serializer = self.get_serializer(user, data=request.data)
+        if serializer.is_valid():
+            new_password = serializer.validated_data['new_password']
             user.set_password(new_password)
-
             user.save()
 
-            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
-        
-        except User.DoesNotExist:
-            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "La contraseña ha sido actualizada correctamente."}, status=status.HTTP_200_OK)
 
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+###############
+#   COURSES   #
+###############
+
+#Permite realizar todas las operaciones basicas sobre el curso
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated, IsProfessor]
+    permission_classes = [IsAdminUserOrProfessorOrReadOnly]
 
-class StudentViewSet(viewsets.ModelViewSet):
+#Permite añadir usuarios al curso y ver la lista de usuarios del curso
+class StudentListCreateView(generics.ListCreateAPIView):
+    serializer_class = StudentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        course_id = self.kwargs['course_id']
+        return Student.objects.filter(course_id=course_id)
+
+    def perform_create(self, serializer):
+        course_id = self.kwargs['course_id']
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            raise Response({"detail": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer.save(course=course)
+
+#Permite borrar usuarios
+class StudentDestroyView(generics.DestroyAPIView):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
+    permission_classes = [IsAuthenticated]
 
-class MaterialCourseViewSet(viewsets.ModelViewSet):
-    queryset = MaterialCourse.objects.all()
-    serializer_class = MaterialCourseSerializer
+    def get_object(self):
+        student_id = self.kwargs['pk'] 
+        student = Student.objects.filter(id=student_id).first()
 
-class ActivityViewSet(viewsets.ModelViewSet):
-    queryset = Activity.objects.all()
-    serializer_class = ActivitySerializer
-
-class GradeViewSet(viewsets.ModelViewSet):
-    queryset = Grade.objects.all()
-    serializer_class = GradeSerializer
-
-class ForumViewSet(viewsets.ModelViewSet):
-    queryset = Forum.objects.all()
-    serializer_class = ForumSerializer
-
-class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-
-class CourseFeedbackViewSet(viewsets.ModelViewSet):
-    queryset = CourseFeedback.objects.all()
-    serializer_class = CourseFeedbackSerializer
-
-class SuggestionsGetView(APIView):
-    def get(self, request):
-        if 'student_id' not in request.query_params:
-            return Response({"detail": "Missing student_id parameter."}, status=status.HTTP_400_BAD_REQUEST)
-
-        student_id = request.query_params['student_id']
+        if not student:
+            raise NotFound(detail="No student with that id.")
         
+        return student
+
+#Busca sugerencias a los usuarios de cursos de tematica similar a los que estén matriculados
+class SuggestionsGetView(APIView):
+    def get(self, request, user_id):
         try:
-            student = Student.objects.get(id=student_id)
+            user = User.objects.filter(id=user_id).first()
+            students = Student.objects.filter(user=user)
 
-            # Obtener las categorías de los cursos en los que el estudiante está inscrito
-            student_courses = student.courses.all()
-            categories = set()
-            for course in student_courses:
-                categories.update(course.categories.all())  # Usamos ManyToMany para obtener las categorías
+            if not students.exists():
+                return Response({"detail":"Student not found."}, status=status.HTTP_404_NOT_FOUND)
+           
+            # Obtener los ids de los cursos donde esta inscrito
+            student_courses_ids = students.values_list('course', flat=True)
+            
+            # Obtener las categorias de esos cursos, con distinct aseguramos que no haya repetidos
+            categories = Course.objects.filter(id__in=student_courses_ids).values_list('categories', flat=True).distinct()
 
-            # Buscar otros cursos que pertenezcan a las mismas categorías
-            suggested_courses = Course.objects.filter(categories_in=categories).exclude(id_in=student_courses.values_list('id', flat=True))
+            # Buscar otros cursos que pertenezcan a las mismas categorías, y quitamos en los que ya este el estudiante
+            suggested_courses = Course.objects.filter(categories__in=categories).exclude(id__in=student_courses_ids).distinct()
 
             if not suggested_courses.exists():
                 return Response({"detail": "No course suggestions found."}, status=status.HTTP_404_NOT_FOUND)
 
-            suggested_courses_list = [{"name": course.name, "description": course.description} for course in suggested_courses]
+            suggested_courses_list = [{
+                "name": course.name, 
+                "description": course.description, 
+                "categories": [category.name for category in course.categories.all()]}
+                  for course in suggested_courses]
 
             return Response({
                 "suggested_courses": suggested_courses_list
