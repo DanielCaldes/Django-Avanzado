@@ -25,6 +25,7 @@ from django.contrib.auth.models import User
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
 # Consultar una categoria por id
 class CategoryRetrieveView(generics.RetrieveAPIView):
     queryset = Category.objects.all()
@@ -143,6 +144,14 @@ class StudentListCreateView(generics.ListCreateAPIView):
         except Course.DoesNotExist:
             raise Response({"detail": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
         serializer.save(course=course)
+    
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        student_id = response.data.get('id')
+        return Response(
+            {"detail": f"Successfully created. Student ID: {student_id}"},
+            status=status.HTTP_201_CREATED
+        )
 
 #Permite borrar usuarios
 class StudentDestroyView(generics.DestroyAPIView):

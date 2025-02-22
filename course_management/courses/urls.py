@@ -17,8 +17,8 @@ urlpatterns = [
     path('api/users/<int:pk>/password/', PasswordUpdateView.as_view(), name='reset-password'),
     path('api/users/<int:user_id>/suggestions/',SuggestionsGetView.as_view(), name='suggestions'),
 
-    path('api/courses/categories/', CategoryListView.as_view(), name='category-list'),
-    path('api/courses/categories/<int:pk>/', CategoryRetrieveView.as_view(), name='category-detail'),
+    path('api/categories/', CategoryListView.as_view(), name='category-list'),
+    path('api/categories/<int:pk>/', CategoryRetrieveView.as_view(), name='category-detail'),
 
     path('api/courses/<int:course_id>/students/', StudentListCreateView.as_view(), name='course-students'),
     path('api/courses/<int:course_id>/students/<int:pk>/', StudentDestroyView.as_view(), name='delete-student'),
