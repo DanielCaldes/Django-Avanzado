@@ -186,19 +186,19 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 
 - **Método**: GET  
   ```url  
-  /api/courses/categories/
+  /api/categories/
   ```
 - **Descripción**: Obtiene una lista de todas las categorías disponibles.
 - **Respuesta**:
   ```json  
   [
     {
-      "id": 1,
-      "name": "Tecnología"
+      "id": 8,
+      "name": "artificial_intelligence"
     },
     {
-      "id": 2,
-      "name": "Ciencias Sociales"
+      "id": 14,
+      "name": "big_data"
     }
   ]
   ```
@@ -207,14 +207,14 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 
 - **Método**: GET  
   ```url  
-  /api/courses/categories/{category_id}/
+  /api/categories/{category_id}/
   ```
 - **Descripción**: Obtiene los detalles de una categoría específica por su ID.
 - **Respuesta**:
   ```json  
   {
-    "id": 1,
-    "name": "Tecnología"
+    "id": 8,
+    "name": "artificial_intelligence"
   }
   ```
 
@@ -230,12 +230,26 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Descripción**: Permite realizar operaciones CRUD sobre los cursos.
 - **Respuesta**:
   ```json  
-  {
-    "id": 1,
-    "name": "Curso de Tecnología",
-    "description": "Curso introductorio de tecnología",
-    "categories": ["Tecnología", "Ciencias"]
-  }
+  [
+     {
+       "id": 1,
+       "categories_details": [
+         {
+           "id": 5,
+           "name": "business"
+         },
+         {
+           "id": 14,
+           "name": "big_data"
+         }
+       ],
+       "name": "Grado en Big Data y negocios",
+       "description": "Título propio en negocios y Big Data",
+       "start_date": "2025-09-01",
+       "end_date": "2029-06-30",
+       "professor_id": 3
+     }
+  ]
   ```
 
 #### 2. Ver la lista de estudiantes en un curso
@@ -248,11 +262,18 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Respuesta**:
   ```json  
   [
-    {
-      "id": 1,
-      "username": "student_name",
-      "email": "student_email@example.com"
-    }
+     {
+       "id": 1,
+       "user": 10,
+       "user_username": "Iker Casillas",
+       "created_at": "2025-02-22T14:56:52.337772Z"
+     },
+     {
+       "id": 2,
+       "user": 11,
+       "user_username": "Sergio Ramos",
+       "created_at": "2025-02-22T15:11:03.116704Z"
+     }
   ]
   ```
 
@@ -266,13 +287,13 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Cuerpo de la solicitud** (JSON):
   ```json  
   {
-    "user_id": 1
+    "user": "16"
   }
   ```
 - **Respuesta**:
   ```json  
   {
-    "message": "Student added successfully to the course."
+    "detail": "Successfully created. Student ID: 10"
   }
   ```
 
@@ -285,9 +306,7 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Descripción**: Elimina a un estudiante de un curso específico.
 - **Respuesta**:
   ```json  
-  {
-    "message": "Student removed from the course."
-  }
+  {}
   ```
   
 
@@ -303,12 +322,15 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Respuesta**:
   ```json  
   {
-    "suggested_courses": [
-      {
-        "name": "Curso de Ciencia de Datos",
-        "description": "Aprende sobre análisis de datos",
-        "categories": ["Tecnología", "Ciencias"]
-      }
-    ]
+     "suggested_courses": [
+       {
+         "name": "Master en Ciberseguridad y Negocios",
+         "description": "Master oficial",
+         "categories": [
+           "business",
+           "cybersecurity"
+         ]
+       }
+     ]
   }
   ```
