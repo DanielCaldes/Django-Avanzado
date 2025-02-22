@@ -74,8 +74,8 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
    ```
 
 2. Accede a la documentación interactiva de la API en Swagger o Redoc:
-   http://127.0.0.1:8000/swagger/
-   http://127.0.0.1:8000/redoc/
+   - Swagger: http://127.0.0.1:8000/swagger/
+   - Redoc: http://127.0.0.1:8000/redoc/
 
 ## Endpoints
 
@@ -184,7 +184,7 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 
 - **Método**: GET  
   ```url  
-  /api/categories/
+  /api/courses/categories/
   ```
 - **Descripción**: Obtiene una lista de todas las categorías disponibles.
 - **Respuesta**:
@@ -205,7 +205,7 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 
 - **Método**: GET  
   ```url  
-  /api/categories/{category_id}/
+  /api/courses/categories/{category_id}/
   ```
 - **Descripción**: Obtiene los detalles de una categoría específica por su ID.
 - **Respuesta**:
