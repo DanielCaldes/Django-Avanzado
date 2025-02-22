@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework import status
 
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 
 ###############
 #   CATEGORY  #
@@ -34,6 +34,15 @@ class CategoryRetrieveView(generics.RetrieveAPIView):
 ###############
 #    USERS    #
 ###############
+
+# Evita duplicidad de código al formatear la salida de datos del usuario para el JSON
+def format_user_data(user):
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "professor": user.groups.filter(name="Professors").exists(),
+    }
 
 # Crear y obtener el listado de usuarios
 class UsersListCreateView(generics.ListCreateAPIView):
@@ -59,13 +68,7 @@ class UsersListCreateView(generics.ListCreateAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         data = [
-            {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "professor": user.groups.filter(name="Professors").exists(),
-            }
-            for user in queryset
+            format_user_data(user) for user in queryset
         ]
         return Response(data, status=status.HTTP_200_OK)
     
@@ -91,12 +94,7 @@ class UsersRetrieveDeleteView(generics.RetrieveDestroyAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        data = {
-            "id": instance.id,
-            "username": instance.username,
-            "email": instance.email,
-            "professor": instance.groups.filter(name="Professors").exists(),
-        }
+        data = format_user_data(instance)
         return Response(data, status=status.HTTP_200_OK)
 
 # Resetear una contraseña
@@ -166,10 +164,13 @@ class SuggestionsGetView(APIView):
     def get(self, request, user_id):
         try:
             user = User.objects.filter(id=user_id).first()
+            if not user:
+                return Response({"detail":"User not found."}, status=status.HTTP_404_NOT_FOUND)
+
             students = Student.objects.filter(user=user)
 
             if not students.exists():
-                return Response({"detail":"Student not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"detail":"User is not enrolled in any of the courses."}, status=status.HTTP_404_NOT_FOUND)
            
             # Obtener los ids de los cursos donde esta inscrito
             student_courses_ids = students.values_list('course', flat=True)

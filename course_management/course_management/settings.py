@@ -148,3 +148,12 @@ import os
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SUPERUSER_USERNAME = os.getenv('SUPERUSER_USERNAME')
+SUPERUSER_EMAIL = os.getenv('SUPERUSER_EMAIL')
+SUPERUSER_PASSWORD = os.getenv('SUPERUSER_PASSWORD')
