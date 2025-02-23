@@ -154,7 +154,7 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
   ```url  
   /api/users/
   ```
-- **Descripción**: Obtiene la lista de usuarios, con posibilidad de filtrado por grupo (professors/students).
+- **Descripción**: Obtiene la lista de usuarios, con posibilidad de filtrado por grupo (professors/students). ```/api/users/?is_professor=true```
 - **Respuesta**:
   ```json  
   [
