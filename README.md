@@ -12,7 +12,7 @@ Este proyecto es una API REST construida con **Django** que permite gestionar cu
 - **Cambiar contraseña**: Permite cambiar la contaseña a un usuario. ```generics.UpdateAPIView```
 
 ### Categorías
-- **Consultar las categorías**: Obtiene todas las categorías disponibles a las que se puede asociar un curso. ```generics.ListCreateAPIView```
+- **Consultar las categorías**: Obtiene todas las categorías disponibles a las que se puede asociar un curso. ```generics.ListAPIView```
 - **Consultar una categoría**: Obtiene los datos asociados a una categoría específica. ```generics.ListCreateAPIView```
 
 ### Cursos
