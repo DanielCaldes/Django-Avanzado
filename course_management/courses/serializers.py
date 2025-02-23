@@ -12,22 +12,22 @@ class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(write_only=True)
     email = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
-    is_professor = serializers.BooleanField(write_only=True, required=True) #auxiliar para indicar el grupo al que pertenece
+    is_professor = serializers.BooleanField(write_only=True, required=True) # Auxiliary data to indicate the group the user belongs to
 
     class Meta:
         model = User
         fields = ['username', 'email', 'password', 'is_professor']
 
     def create(self, validated_data):
-        # Eliminar los datos auxiliares
+        # Delete the auxiliary data.
         is_professor = validated_data.pop('is_professor')
         password = validated_data.pop('password')
         
         user = User.objects.create(**validated_data)
-        user.set_password(password) # Para pasarla de forma segura
+        user.set_password(password) # To pass it securely by encrypting it
         user.save()
 
-        # Asignar el grupo
+        # Assign the group
         group_name = "Professors" if is_professor else "Students"
         group, _ = Group.objects.get_or_create(name=group_name)
         user.groups.add(group)

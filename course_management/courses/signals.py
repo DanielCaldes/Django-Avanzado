@@ -8,13 +8,13 @@ from .models import Category
 from django.contrib.auth.models import User
 from django.conf import settings
 
-# Crea de forma automática los grupos para los usuarios
+# Automatically create groups for users
 @receiver(post_migrate)
 def crear_grupos_por_defecto(sender, **kwargs):
     Group.objects.get_or_create(name="Professors")
     Group.objects.get_or_create(name="Students")
 
-# Crea de forma atomática todas las categorías posibles de los cursos
+# Automatically create all possible course categories
 @receiver(post_migrate)
 def create_default_categories(sender, **kwargs):
     categories = [
@@ -37,7 +37,7 @@ def create_default_categories(sender, **kwargs):
     for category in categories:
         Category.objects.get_or_create(name=category[0])
 
-# Crear de forma automatica un superusuario admin si no existe
+# Automatically create a superuser admin if it doesn't exist
 @receiver(post_migrate)
 def create_superuser(sender, **kwargs):
     if not User.objects.filter(username=settings.SUPERUSER_USERNAME).exists():
@@ -46,4 +46,4 @@ def create_superuser(sender, **kwargs):
             email=settings.SUPERUSER_EMAIL,
             password=settings.SUPERUSER_PASSWORD
         )
-        print("Superusuario creado automáticamente.")
+        print("SuperUser created!.")

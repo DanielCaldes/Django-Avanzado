@@ -21,12 +21,12 @@ from django.contrib.auth.models import User
 #   CATEGORY  #
 ###############
 
-# Ver todas las categorias
+# View all categories
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
-# Consultar una categoria por id
+# Query a category by ID
 class CategoryRetrieveView(generics.RetrieveAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -36,7 +36,7 @@ class CategoryRetrieveView(generics.RetrieveAPIView):
 #    USERS    #
 ###############
 
-# Evita duplicidad de código al formatear la salida de datos del usuario para el JSON
+# Prevent code duplication when formatting the user data output for JSON
 def format_user_data(user):
     return {
         "id": user.id,
@@ -45,20 +45,20 @@ def format_user_data(user):
         "professor": user.groups.filter(name="Professors").exists(),
     }
 
-# Crear y obtener el listado de usuarios
+# Create and retrieve the user list.
 class UsersListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     
     def get_permissions(self):
         if self.request.method == "POST":
-            return [IsAdminUser()]  # Solo administradores pueden crear usuarios
+            return [IsAdminUser()]
         return [AllowAny()]
     
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Filtrar por grupo (professors/students)
+        # Filter by teachers if '/?is_teacher=true' or students '/?is_teacher=false' is provided.
         is_professor = self.request.query_params.get("is_professor")
         if is_professor is not None:
             group_name = "Professors" if is_professor.lower() == "true" else "Students"
@@ -83,14 +83,14 @@ class UsersListCreateView(generics.ListCreateAPIView):
             status=status.HTTP_201_CREATED,
         )
     
-# Obtener y borrar un usuario por id    
+# Get and delete a user by ID    
 class UsersRetrieveDeleteView(generics.RetrieveDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
     def get_permissions(self):
         if self.request.method == "DELETE":
-            return [IsAdminUser()]  # Solo admins pueden eliminar usuarios
+            return [IsAdminUser()]
         return [AllowAny()]
 
     def retrieve(self, request, *args, **kwargs):
@@ -98,7 +98,7 @@ class UsersRetrieveDeleteView(generics.RetrieveDestroyAPIView):
         data = format_user_data(instance)
         return Response(data, status=status.HTTP_200_OK)
 
-# Resetear una contraseña
+# Reset a password
 class PasswordUpdateView(generics.UpdateAPIView):
     queryset = User.objects.all()
     permission_classes = [IsAdminUser]
@@ -113,7 +113,7 @@ class PasswordUpdateView(generics.UpdateAPIView):
             user.set_password(new_password)
             user.save()
 
-            return Response({"message": "La contraseña ha sido actualizada correctamente."}, status=status.HTTP_200_OK)
+            return Response({"message": "The password has been successfully updated."}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -122,13 +122,13 @@ class PasswordUpdateView(generics.UpdateAPIView):
 #   COURSES   #
 ###############
 
-#Permite realizar todas las operaciones basicas sobre el curso
+# Allows performing all basic operations on the course
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     permission_classes = [IsAdminUserOrProfessorOrReadOnly]
 
-#Permite añadir usuarios al curso y ver la lista de usuarios del curso
+# Allows adding users to the course and viewing the course user list
 class StudentListCreateView(generics.ListCreateAPIView):
     serializer_class = StudentSerializer
     permission_classes = [IsAuthenticated]
@@ -153,7 +153,7 @@ class StudentListCreateView(generics.ListCreateAPIView):
             status=status.HTTP_201_CREATED
         )
 
-#Permite borrar usuarios
+# Allows deleting users
 class StudentDestroyView(generics.DestroyAPIView):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
@@ -168,7 +168,7 @@ class StudentDestroyView(generics.DestroyAPIView):
         
         return student
 
-#Busca sugerencias a los usuarios de cursos de tematica similar a los que estén matriculados
+# Suggest courses to users with sames categories to the ones they are enrolled in
 class SuggestionsGetView(APIView):
     def get(self, request, user_id):
         try:
@@ -181,13 +181,13 @@ class SuggestionsGetView(APIView):
             if not students.exists():
                 return Response({"detail":"User is not enrolled in any of the courses."}, status=status.HTTP_404_NOT_FOUND)
            
-            # Obtener los ids de los cursos donde esta inscrito
+            # Get the IDs of the courses the user is enrolled in
             student_courses_ids = students.values_list('course', flat=True)
             
-            # Obtener las categorias de esos cursos, con distinct aseguramos que no haya repetidos
+            # Get the categories of those courses, using distinct to ensure there are no duplicates
             categories = Course.objects.filter(id__in=student_courses_ids).values_list('categories', flat=True).distinct()
 
-            # Buscar otros cursos que pertenezcan a las mismas categorías, y quitamos en los que ya este el estudiante
+            # Search for other courses that belong to the same categories, and exclude the ones the student is already enrolled in
             suggested_courses = Course.objects.filter(categories__in=categories).exclude(id__in=student_courses_ids).distinct()
 
             if not suggested_courses.exists():

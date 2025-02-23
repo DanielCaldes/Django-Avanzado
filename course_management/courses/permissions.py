@@ -2,7 +2,7 @@ from rest_framework import permissions
 
 class IsAdminUserOrProfessorOrReadOnly(permissions.BasePermission):
     """
-    Permite si el usuario es un administrador o un profesor
+    Allow if the user is an administrator or a teacher.
     """
     def has_permission(self, request, view):
         if request.method in ['GET', 'HEAD', 'OPTIONS']:  
@@ -24,25 +24,25 @@ class IsProfessorOrReadOnly(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        # Permitir GET, HEAD, OPTIONS a cualquier usuario autenticado
+        # GET, HEAD, OPTIONS
         if request.method in permissions.SAFE_METHODS:
             return request.user and request.user.is_authenticated
         
-        # Para otros métodos (POST, PUT, DELETE), verificar si es profesor
+        # POST, PUT, DELETE
         return request.user and request.user.is_authenticated and request.user.groups.filter(name='Professor').exists()    
 
 class IsStudent(permissions.BasePermission):
     """
-    Permiso para estudiantes
+    Permission for users in group 'Students'
     """
     def has_permission(self, request, view):
         return request.user and request.user.groups.filter(name='Students').exists()
 
 class ReadOnlyForStudents(permissions.BasePermission):
     """
-    Permiso para permitir solo lectura a los estudiantes.
+    Permission to allow read-only access for students.
     """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
-            return True  # Permite lectura a todos
+            return True
         return request.user and not request.user.groups.filter(name='Students').exists()
